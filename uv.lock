@@ -1186,8 +1186,8 @@ wheels = [
 
 [[package]]
 name = "traust-contracts"
-version = "1.2.0"
-source = { git = "ssh://git@gitlab.cee.redhat.com/hybrid-platforms-sec/traust-contracts.git?tag=v1.2.0#6ad98b12a31abbd79b739bd0bdb85e2f5fe504cd" }
+version = "1.2.2"
+source = { git = "https://github.com/openshift/traust-contracts.git?rev=04840f0ff852df59e1e83ac4a392b6d05a1f2ff6#04840f0ff852df59e1e83ac4a392b6d05a1f2ff6" }
 dependencies = [
     { name = "jsonschema" },
     { name = "pydantic" },
@@ -1196,7 +1196,7 @@ dependencies = [
 
 [[package]]
 name = "traust-ledger"
-version = "0.21.4"
+version = "0.21.5"
 source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
@@ -1236,7 +1236,7 @@ requires-dist = [
     { name = "pydantic-settings", marker = "extra == 'service'", specifier = ">=2.0" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.8" },
     { name = "sqlalchemy", marker = "extra == 'service'", specifier = ">=2.0" },
-    { name = "traust-contracts", git = "ssh://git@gitlab.cee.redhat.com/hybrid-platforms-sec/traust-contracts.git?tag=v1.2.0" },
+    { name = "traust-contracts", git = "https://github.com/openshift/traust-contracts.git?rev=04840f0ff852df59e1e83ac4a392b6d05a1f2ff6" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'service'", specifier = ">=0.30" },
 ]
 provides-extras = ["service", "cli"]
