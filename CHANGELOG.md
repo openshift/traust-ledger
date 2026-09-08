@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.21.4] — 2026-09-08
+
+### Fixed
+- `tests/test_service_routes.py` builds the deliberately-invalid Basic
+  Authorization header at runtime instead of carrying a base64 literal that
+  tripped the public forge's secret-scanning "HTTP basic authentication
+  header" detector (openshift/traust-ledger alert #1). The value was a
+  throwaway `user:pass`, never a live credential; test behaviour unchanged.
+
 ## [0.21.3] — 2026-09-08
 
 ### Added

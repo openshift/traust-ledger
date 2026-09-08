@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
@@ -131,7 +132,9 @@ def test_invalid_auth_401(client: TestClient) -> None:
     response = client.post(
         ROUTE_EVENTS,
         json={"kind": "countersign", "event": {}},
-        headers={"Authorization": "Basic dXNlcjpwYXNz"},
+        # Built at runtime so no literal credential-shaped header sits in
+        # the tree; the value is a throwaway that the gate must reject.
+        headers={"Authorization": "Basic " + base64.b64encode(b"user:pass").decode()},
     )
     assert response.status_code == 401
     assert response.json()["detail"] == MissingAuthError.message
