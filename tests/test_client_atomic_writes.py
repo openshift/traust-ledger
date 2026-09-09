@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from conftest import none_alg_jwt
 
 from traust_ledger._internal.backends.file import FileBackend
 from traust_ledger._internal.integrity import stamp_merkle_metadata, verify_merkle_integrity
@@ -22,7 +23,9 @@ from traust_ledger.client import LedgerClient, LedgerError
 from traust_ledger.paths import layer_file_path
 
 LAYER_ID = "test-layer"
-FAKE_TOKEN = "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNjkzMDAwMDAwLCJleHAiOjk5OTk5OTk5OTl9."  # noqa: E501 — not a real token
+FAKE_TOKEN = none_alg_jwt(
+    sub="test@example.com", email="test@example.com", iat=1693000000, exp=9999999999
+)
 
 
 def _make_client(

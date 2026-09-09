@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from conftest import AUTH_HEADER, LAYER_ID, RECORDED_AT
+from conftest import AUTH_HEADER, LAYER_ID, RECORDED_AT, none_alg_jwt
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from traust_contracts.v1.models.layer import LayerActor
@@ -176,7 +176,7 @@ def test_cli_submit_stamps_fingerprint_algo(tmp_path: Path, monkeypatch) -> None
     monkeypatch.setenv("LAAS_DATA_DIR", str(tmp_path))
     monkeypatch.setenv(
         "LAAS_TOKEN",
-        "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0IiwiZXhwIjo5OTk5OTk5OTk5fQ.",
+        none_alg_jwt(sub="test", exp=9999999999),
     )
     monkeypatch.setenv("LEDGER_TOKEN", "fake-jwt-for-test")
 

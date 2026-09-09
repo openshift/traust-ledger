@@ -11,6 +11,7 @@ from conftest import (
     AUTH_HEADER,
     LAYER_ID,
     TEST_ISSUER,
+    none_alg_jwt,
 )
 from fastapi.testclient import TestClient
 from pytest_httpserver import HTTPServer
@@ -122,7 +123,7 @@ class TestVerifyEndpoint:
 
 
 class TestVerifyCLI:
-    _TOKEN = "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ0ZXN0IiwiZXhwIjo5OTk5OTk5OTk5fQ."
+    _TOKEN = none_alg_jwt(sub="test", exp=9999999999)
 
     def test_clean_exit_0(self, tmp_path: Path) -> None:
         layer = _good_layer()

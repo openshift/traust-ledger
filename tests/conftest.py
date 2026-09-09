@@ -170,3 +170,19 @@ def _no_import_graph_mutation():
         "then fail to resolve dotted monkeypatch targets. Do import-graph "
         "manipulation in a subprocess instead."
     )
+
+
+def none_alg_jwt(**claims: object) -> str:
+    """An unsigned (alg=none) JWT-shaped token for tests, assembled at runtime so
+    no token-shaped literal sits in the tree for forge secret scanners."""
+    import base64
+    import json
+
+    def seg(obj: object) -> str:
+        return (
+            base64.urlsafe_b64encode(json.dumps(obj, separators=(",", ":")).encode())
+            .decode()
+            .rstrip("=")
+        )
+
+    return f"{seg({'alg': 'none'})}.{seg(claims)}."
