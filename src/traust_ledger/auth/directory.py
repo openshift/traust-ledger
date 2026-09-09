@@ -7,7 +7,7 @@ a narrower question the ledger cannot: *is that person still a current
 member of the organisation*. The ledger ships no directory implementation;
 a deployment supplies one as a **command** and the SDK runs it:
 
-    LEDGER_DIRECTORY_COMMAND="python3 /opt/traust-internal/bin/validate_employee.py"
+    LEDGER_DIRECTORY_COMMAND="python3 /opt/your-org/bin/validate_employee.py"
 
 The command is invoked as ``<command> <identity>`` and must print one
 machine-readable line:
