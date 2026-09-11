@@ -23,6 +23,7 @@ from traust_contracts.v1.models.layer import LayerActor
 
 from traust_ledger._internal.backends import Backend, create_backend
 from traust_ledger._internal.backends.constants import EMPTY_LAYER
+from traust_ledger._internal.events import attach_identity
 from traust_ledger._internal.integrity.signing import SigningConfig
 from traust_ledger._internal.layer_finalize import finalize_layer
 from traust_ledger._internal.writer import LedgerWriter
@@ -303,6 +304,37 @@ class LedgerClient:
             raise LedgerError(exc.detail) from exc
         return {"merkle_root": merkle_root, "layer_id": layer_id}
 
+    def stamp_event_identities(
+        self,
+        layer_id: str,
+        fingerprints: dict[str, str],
+    ) -> dict[str, Any]:
+        """Backfill event fingerprints from *fingerprints* and re-sign atomically.
+
+        The counterpart to patch_metadata for the event layer: identity is
+        stamped inside the Merkle tree, so the whole thing finalizes in one
+        Backend.mutate — the caller never writes the layer itself. *fingerprints*
+        maps finding_ref -> fingerprint (the harness is the sole producer). Never
+        overwrites an existing fingerprint (identity is a historical
+        observation). Returns the count stamped alongside the new root.
+        """
+        from traust_ledger.errors import ServiceError
+
+        path = layer_file_path(self._config.data_dir, layer_id)
+        config = self._config
+
+        def _stamp_and_finalize(layer: dict) -> tuple[str, int]:
+            stamped = sum(
+                1 for e in layer.get("events") or [] if attach_identity(e, fingerprints)
+            )
+            return finalize_layer(layer, config, layer_id=layer_id), stamped
+
+        try:
+            merkle_root, stamped = self._backend.mutate(path, _stamp_and_finalize)
+        except ServiceError as exc:
+            raise LedgerError(exc.detail) from exc
+        return {"merkle_root": merkle_root, "layer_id": layer_id, "stamped": stamped}
+
     def create(
         self,
         layer_id: str,
@@ -315,6 +347,16 @@ class LedgerClient:
         if "metadata" not in base:
             base["metadata"] = {}
         self._backend.store(path, base)
+        return {"layer_id": layer_id}
+
+    def store(self, layer_id: str, layer: dict[str, Any]) -> dict[str, Any]:
+        """Persist a fully-materialized layer through the backend.
+
+        For callers that build or mutate a whole layer in memory (e.g. the
+        cumulative projection) and sign() separately. Unsigned on its own.
+        """
+        path = layer_file_path(self._config.data_dir, layer_id)
+        self._backend.store(path, layer)
         return {"layer_id": layer_id}
 
     def verify(self, layer_id: str, *, check_signatures: bool = False) -> dict[str, Any]:
@@ -395,8 +437,54 @@ class LedgerClient:
             self._config,
         )
 
+    def countersign(
+        self,
+        layer_id: str,
+        finding_ref: str,
+        *,
+        rationale: str,
+        recorded_at: str,
+        decision: str | None = None,
+        severity: str | None = None,
+        actor: LayerActor | None = None,
+    ) -> dict[str, Any]:
+        """Record a human countersign/severity event through the gated handler.
+
+        Runs the human-lane gates (two-person, verified-for-FP, rationale,
+        timestamp) and finalizes atomically. Falls back to the token-verified
+        caller when no actor is supplied.
+        """
+        from traust_ledger.handlers.event_handler import submit_event
+        from traust_ledger.models import EventEnvelope
+
+        event: dict[str, Any] = {
+            "layer_id": layer_id,
+            "finding_ref": finding_ref,
+            "rationale": rationale,
+            "recorded_at": recorded_at,
+        }
+        if severity is not None:
+            event["severity"] = severity
+            kind = "severity"
+        else:
+            event["decision"] = decision
+            kind = "countersign"
+        envelope = EventEnvelope(kind=kind, event=event)
+        return self._invoke(
+            submit_event, envelope, actor or self._actor(), self._writer, self._config
+        )
+
     def list_layers(self) -> list[str]:
         return self._backend.list_layer_ids()
+
+    def whoami(self) -> LayerActor:
+        """Return the verified actor derived from the caller's token.
+
+        The token is the authority for signer identity — callers that need
+        to attribute a non-event write (e.g. an alias confirmation) resolve
+        it here rather than asserting an identity of their own.
+        """
+        return self._actor()
 
     def actor(self) -> LayerActor:
         """The verified actor this client writes as: token verified, then the
