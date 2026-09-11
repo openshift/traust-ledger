@@ -2,6 +2,16 @@
 
 All notable changes to traust-ledger are documented here.
 
+## [0.2.0]
+
+## Changes
+
+- The counterpart to patch_metadata for the event layer: backfills event
+  fingerprints (finding_ref -> fp) via attach_identity and re-signs in one
+  atomic Backend.mutate. Never overwrites an existing fingerprint (identity
+  is a historical observation); returns the count stamped. Lets the harness
+  stamp cross-scan identity onto events without writing the layer itself.
+
 ## [0.1.1]
 
 ## Changes
